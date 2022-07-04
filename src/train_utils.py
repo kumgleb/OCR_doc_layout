@@ -3,13 +3,17 @@ import torch
 import wandb
 import numpy as np
 from tqdm import tqdm
+from .losses import jaccard_loss
 
 
-def forward(model, x, y, criterion, device):
+def forward(model, x, y, criterion, device, mode="train"):
     x = x.to(device)
     y = y.to(device)
     prd = model(x)
-    loss = criterion(prd, y.squeeze(1))
+    if mode == "eval":
+        loss = jaccard_loss(y, prd)
+    elif mode == "train":
+        loss = criterion(prd, y.squeeze(1))
     return loss, prd
 
 
@@ -20,7 +24,7 @@ def evaluate(model, dataloader, device, criterion):
         val_iter = iter(dataloader)
         for i in range(len(dataloader)):
             img, _, resized_mask = next(val_iter)
-            loss, _ = forward(model, img, resized_mask, criterion, device)
+            loss, _ = forward(model, img, resized_mask, criterion, device, "eval")
             losses.append(loss.item())
     return np.mean(losses)
 
