@@ -1,17 +1,18 @@
-img_size = [800, 600]
-mask_size = [101, 76]
+img_size = [200, 100]  # [600, 400], [800, 600], [200, 100]
+mask_size = [26, 13]  # [76, 51], [101, 76], [26, 13]
 p_hflip = 0.5
 p_vflip = 0.5
 
 wandb_logging = false
-n_iters = 1000
-n_iters_val = 100
+n_iter = 1000
+n_iter_val = 100
 lr = 1e-3
 bs = 2
 save_best_val = true
+clip_grad = false
 checkpoint_path = './weights'
 
-n_classes = 2
+n_classes = 3
 n_blocks = [3, 4, 23, 3]
 atrous_rates = [6, 12, 18]
 multi_grids = [1, 2, 4]

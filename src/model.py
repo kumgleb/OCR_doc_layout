@@ -100,8 +100,8 @@ class ResNetLayer(nn.Sequential):
         # Downsampling is only in the first block
         for i in range(n_layers):
             self.add_module(
-                    f"block{i + 1}",
-                    Bottleneck(
+                f"block{i + 1}",
+                Bottleneck(
                     in_ch=(in_ch if i == 0 else out_ch),
                     out_ch=out_ch,
                     stride=(stride if i == 0 else 1),
@@ -120,8 +120,9 @@ class Stem(nn.Sequential):
     def __init__(self, out_ch):
         super(Stem, self).__init__()
         self.add_module("conv1", ConvBnReLU(3, out_ch, 7, 2, 3, 1))
-        self.add_module("pool", nn.MaxPool2d(3, 2, 1, ceil_mode=True, return_indices=False))
-
+        self.add_module(
+            "pool", nn.MaxPool2d(3, 2, 1, ceil_mode=True, return_indices=False)
+        )
 
 
 class DeepLabV3(nn.Sequential):
@@ -136,11 +137,8 @@ class DeepLabV3(nn.Sequential):
         if output_stride == 8:
             s = [1, 2, 1, 1]
             d = [1, 1, 2, 4]
-        elif output_stride == 16:
-            s = [1, 2, 2, 1]
-            d = [1, 1, 1, 2]
 
-        ch = [64 * 2 ** p for p in range(6)]
+        ch = [64 * 2**p for p in range(6)]
         self.add_module("layer1", Stem(ch[0]))
         self.add_module("layer2", ResNetLayer(n_blocks[0], ch[0], ch[2], s[0], d[0]))
         self.add_module("layer3", ResNetLayer(n_blocks[1], ch[2], ch[3], s[1], d[1]))

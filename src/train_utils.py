@@ -9,7 +9,7 @@ def forward(model, x, y, criterion, device):
     x = x.to(device)
     y = y.to(device)
     prd = model(x)
-    loss = criterion(y, prd)
+    loss = criterion(prd, y.squeeze(1))
     return loss, prd
 
 
@@ -31,9 +31,9 @@ def train_model(
     val_dataloader,
     device,
     optimizer,
-    criterion,
     scheduler,
     cfg,
+    criterion,
 ):
 
     losses_train, losses_train_mean = [], []
@@ -42,27 +42,28 @@ def train_model(
     best_val_loss = 1e6
 
     tr_it = iter(train_dataloader)
-    progress_bar = tqdm(range(cfg["train"]["n_iter"]))
+    progress_bar = tqdm(range(cfg["n_iter"]))
 
-    wandb.watch(model)
+    torch.cuda.empty_cache()
+
+    if cfg["wandb_logging"]:
+        wandb.watch(model)
     for i in progress_bar:
         try:
-            data, _ = next(tr_it)
-            x, y = data["image"], data["mask"]
+            img, _, resized_mask = next(tr_it)
         except StopIteration:
             tr_it = iter(train_dataloader)
-            data, _ = next(tr_it)
-            x, y = data["image"], data["mask"]
+            img, _, resized_mask = next(tr_it)
 
         model.train()
         torch.set_grad_enabled(True)
 
-        loss, _ = forward(model, x, y, criterion, device)
+        loss, _ = forward(model, img, resized_mask, criterion, device)
 
         optimizer.zero_grad()
         loss.backward()
 
-        if cfg["train"]["clip_grad"]:
+        if cfg["clip_grad"]:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
         optimizer.step()
 
@@ -74,7 +75,7 @@ def train_model(
         if cfg["wandb_logging"]:
             wandb.log({"train_loss": loss.item(), "iter": i})
 
-        if i % cfg["train"]["n_iter_val"] == 0:
+        if i % cfg["n_iter_val"] == 0:
             loss_val = evaluate(model, val_dataloader, device, criterion)
             losses_val.append(loss_val)
             progress_bar.set_description(f"val_loss: {loss_val:.5f}")
@@ -87,9 +88,9 @@ def train_model(
             else:
                 scheduler.step()
 
-        if cfg["train"]["save_best_val"] and loss_val < best_val_loss:
+        if cfg["save_best_val"] and loss_val < best_val_loss:
             best_val_loss = loss_val
-            checkpoint_path = cfg["train"]["checkpoint_path"]
+            checkpoint_path = cfg["checkpoint_path"]
             torch.save(
                 model.state_dict(),
                 f"{checkpoint_path}/{model.__class__.__name__}_{loss_val:.3f}.pth",
