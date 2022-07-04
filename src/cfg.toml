@@ -1,19 +1,21 @@
-img_size = [200, 100]  # [600, 400], [800, 600], [200, 100]
-mask_size = [26, 13]  # [76, 51], [101, 76], [26, 13]
+img_size = [600, 400]  # [600, 400], [800, 600], [200, 100]
+mask_size = [76, 51]  # [76, 51], [101, 76], [26, 13]
 p_hflip = 0.5
 p_vflip = 0.5
 
-wandb_logging = false
-n_iter = 1000
+wandb_logging = true
+n_iter = 10000
 n_iter_val = 100
 lr = 1e-3
-bs = 2
+bs = 3
 save_best_val = true
 clip_grad = false
 checkpoint_path = './weights'
 
 n_classes = 3
-n_blocks = [3, 4, 23, 3]
+n_blocks = [3, 4, 10, 3]
 atrous_rates = [6, 12, 18]
 multi_grids = [1, 2, 4]
 output_stride = 8
+
+seed = 123

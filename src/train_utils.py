@@ -3,7 +3,7 @@ import torch
 import wandb
 import numpy as np
 from tqdm import tqdm
-from .losses import jaccard_loss
+from .losses import jaccard_loss, jaccard
 
 
 def forward(model, x, y, criterion, device, mode="train"):
@@ -11,7 +11,7 @@ def forward(model, x, y, criterion, device, mode="train"):
     y = y.to(device)
     prd = model(x)
     if mode == "eval":
-        loss = jaccard_loss(y, prd)
+        loss = 1 - jaccard(y, prd)
     elif mode == "train":
         loss = criterion(prd, y.squeeze(1))
     return loss, prd
