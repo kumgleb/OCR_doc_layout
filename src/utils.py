@@ -1,8 +1,20 @@
 import os
 import json
-from pycocotools.coco import COCO
-from tqdm import tqdm
+import torch
+import random
 import numpy as np
+from pycocotools.coco import COCO
+
+
+def set_seed(seed):
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def transform_annotations(base_path: str, coco: COCO, mode: str) -> None:
