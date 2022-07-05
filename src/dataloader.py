@@ -94,3 +94,37 @@ class Transformations:
         resized_mask = resized_mask.type(torch.long)
 
         return img, mask, resized_mask
+
+
+class COCODatasetInference(Dataset):
+    def __init__(
+        self, coco_annot: COCO, root_path: str, img_size: Tuple[int, int]
+    ) -> None:
+        super().__init__()
+        self.cat_ids = coco_annot.getCatIds()
+        self.root_path = root_path
+        self.coco_annot = coco_annot
+        self.img_ids = self.coco_annot.getImgIds(catIds=self.coco_annot.getCatIds())
+        self.resize = transforms.Resize(img_size)
+
+
+    def __len__(self) -> int:
+        return len(self.img_ids)
+
+    def __getitem__(self, i: int) -> Tuple[torch.Tensor, torch.LongTensor]:
+        img_id = self.img_ids[i]
+
+        annIds = self.coco_annot.getAnnIds(
+            imgIds=img_id, catIds=self.cat_ids, iscrowd=None
+        )
+        anns = self.coco_annot.loadAnns(annIds)
+
+        img = self.coco_annot.loadImgs(img_id)[0]
+        orig_img = io.read_image(os.path.join(self.root_path, "data", img["file_name"]))
+        orig_size = orig_img.size
+
+        img = self.resize(orig_img)
+
+        img = img.type(torch.float32) / 255
+ 
+        return img, orig_img

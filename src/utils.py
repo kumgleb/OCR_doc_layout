@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from pycocotools.coco import COCO
+from skimage import morphology
+from torchvision.utils import draw_bounding_boxes
 
 
 def set_seed(seed):
@@ -119,3 +121,47 @@ class ErodeDilate:
         mask = cv2.erode(mask, self.kernel, iterations=self.erode_iter)
         mask = cv2.dilate(mask, self.kernel, iterations=self.dilate_iter)
         return mask
+
+
+def get_bboxes(inst_masks):
+    bboxes = []
+    for i in np.unique(inst_masks)[1:]:
+        x1 = np.argwhere(inst_masks[0] == i)[:, 1].min()
+        y1 = np.argwhere(inst_masks[0] == i)[:, 0].min()
+
+        x2 = np.argwhere(inst_masks[0] == i)[:, 1].max()
+        y2 = np.argwhere(inst_masks[0] == i)[:, 0].max()
+
+        bboxes.append((x1, y1, x2, y2))
+    return bboxes
+
+
+def infer_bboxes(model, img, orig_img, device, postproc=None):
+
+    prd = model(img.to(device).unsqueeze(0))
+    prd = prd.argmax(dim=1).unsqueeze(0)
+    prd = F.interpolate(
+        prd.type(torch.float32),
+        (orig_img.shape[1], orig_img.shape[2]),
+        mode="nearest",
+    )
+
+    if postproc is not None:
+        prd_post = postproc(prd)
+        prd = torch.from_numpy(prd_post).unsqueeze(0)
+    else:
+        prd = prd.squeeze(0)
+
+    prd = torch.clip(prd, 0, 1)
+    inst_masks = morphology.label(prd.cpu().numpy())
+
+    bboxes = get_bboxes(inst_masks)
+
+    for box in bboxes:
+        box = torch.tensor(box, dtype=torch.int)
+        orig_img = draw_bounding_boxes(orig_img, box.unsqueeze(0), width=5,
+                                    colors=(255,255,0))
+                            
+    img = orig_img.moveaxis(0, 2)
+
+    return img
