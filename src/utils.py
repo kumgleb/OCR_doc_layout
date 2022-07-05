@@ -159,9 +159,10 @@ def infer_bboxes(model, img, orig_img, device, postproc=None):
 
     for box in bboxes:
         box = torch.tensor(box, dtype=torch.int)
-        orig_img = draw_bounding_boxes(orig_img, box.unsqueeze(0), width=5,
-                                    colors=(255,255,0))
-                            
+        orig_img = draw_bounding_boxes(
+            orig_img, box.unsqueeze(0), width=5, colors=(255, 255, 0)
+        )
+
     img = orig_img.moveaxis(0, 2)
 
     return img
