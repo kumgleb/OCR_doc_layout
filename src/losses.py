@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -73,9 +74,9 @@ def mask_to_class(mask, n_classes=3):
     return class_mask
 
 
-def jaccard(gt_mask, prd_mask, smooth=0.1):
+def jaccard(gt_mask, prd_mask, smooth=0.1, reduce="mean"):
     """Calculate Jaccard score per class mean per batch."""
-    prd_mask = prd_mask.argmax(dim=1)
+    # prd_mask = prd_mask.argmax(dim=1)
 
     prd_mask = prd_mask.detach().cpu().numpy()
     gt_mask = gt_mask.squeeze(1).detach().cpu().numpy()
@@ -89,7 +90,16 @@ def jaccard(gt_mask, prd_mask, smooth=0.1):
     score = (intersection + smooth) / (union + smooth)
     assert score.max() <= 1
     score = score.mean(axis=1)
-    return score.mean()
+
+    if reduce == "mean":
+        return score.mean()
+    
+    elif reduce == "sum":
+        return score.sum()
+
+    else:
+        return score
+
 
 
 def jaccard_score(gt_mask, prd_logits, eps=1e-7):
@@ -134,3 +144,31 @@ def jaccard_loss(gt_mask, prd_logits, eps=1e-7):
     """
     jacc_score = jaccard_score(gt_mask, prd_logits)
     return 1 - jacc_score
+
+
+def score_model(model, val_dataloader, device, postproc=None):
+    """Evaluates metric mean and std per class."""
+    scores = []
+    val_it = iter(val_dataloader)
+    for _ in tqdm(range(len(val_it))):
+        img, mask, _ = next(val_it)
+        img, mask = img.to(device), mask.to(device)
+        prd = model(img.to(device))
+        prd = prd.argmax(dim=1).unsqueeze(0)
+        prd = F.interpolate(
+            prd.type(torch.float32),
+            (img.shape[2], img.shape[3]),
+            mode="nearest",
+        )
+
+        if postproc is not None:
+            prd_post = postproc(prd)
+            prd = torch.from_numpy(prd_post).unsqueeze(0)
+        else:
+            prd = prd.squeeze(0)
+
+        score = jaccard(mask, prd, reduce=None)
+        scores.append(score)
+    mean_scores = np.mean(scores, axis=0)
+    std_scores = np.std(scores, axis=0)
+    return mean_scores, std_scores

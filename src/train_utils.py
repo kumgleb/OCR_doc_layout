@@ -11,7 +11,7 @@ def forward(model, x, y, criterion, device, mode="train"):
     y = y.to(device)
     prd = model(x)
     if mode == "eval":
-        loss = 1 - jaccard(y, prd)
+        loss = 1 - jaccard(y, prd.argmax(dim=1))
     elif mode == "train":
         loss = criterion(prd, y.squeeze(1))
     return loss, prd
