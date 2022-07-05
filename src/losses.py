@@ -1,6 +1,6 @@
-from tqdm import tqdm
-import numpy as np
 import torch
+import numpy as np
+from tqdm import tqdm
 import torch.nn.functional as F
 
 
@@ -24,7 +24,7 @@ def mask_to_class(mask, n_classes=3):
 
 
 def jaccard(gt_mask, prd_mask, smooth=0.1, reduce="mean"):
-    """Calculate Jaccard score per class mean per batch."""
+    """Calculate Jaccard score per class per batch."""
 
     prd_mask = prd_mask.detach().cpu().numpy()
     gt_mask = gt_mask.squeeze(1).detach().cpu().numpy()
