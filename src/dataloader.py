@@ -67,11 +67,15 @@ class Transformations:
         img_size: Tuple[int, int],
         p_hflip: float,
         p_vflip: float,
+        p_invert: float,
+        p_rgb_to_gs: float,
         mask_size: Tuple[int, int],
     ):
         self.resize = transforms.Resize(img_size)
         self.p_hflip = p_hflip
         self.p_vflip = p_vflip
+        self.p_invert = p_invert
+        self.p_rgb_to_gs = p_rgb_to_gs
         self.mask_size = mask_size
 
     def __call__(self, img, mask):
@@ -86,6 +90,12 @@ class Transformations:
         if np.random.rand() < self.p_vflip:
             img = tf.vflip(img)
             mask = tf.vflip(mask)
+
+        if np.random.rand() < self.p_invert:
+            img = tf.invert(img)
+
+        if np.random.rand() < self.p_rgb_to_gs:
+            img = tf.rgb_to_grayscale(img, num_output_channels=3)
 
         resized_mask = resize_mask(mask, self.mask_size)
 

@@ -3,7 +3,7 @@ import torch
 import wandb
 import numpy as np
 from tqdm import tqdm
-from .losses import jaccard_loss, jaccard
+from .losses import jaccard
 
 
 def forward(model, x, y, criterion, device, mode="train"):
