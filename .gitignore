@@ -1,2 +1,6 @@
 /__pycache__
 /dataset
+/.vscode
+/weights
+/wandb
+/src/__pycache__
